@@ -3,9 +3,12 @@ import type { NextPage } from 'next'
 import { useCanvas } from '../hooks/useCanvas'
 
 const Home: NextPage = () => {
-  const { isDrawing } = useCanvas()
+  const [canvas, setCanvas] = React.useState<HTMLElement | null>(null)
+  const {} = useCanvas(canvas as HTMLElement)
 
-  console.log(isDrawing)
+  React.useEffect(() => {
+    setCanvas(document?.getElementById('canvas'))
+  }, [])
 
   return (
     <React.Fragment>
@@ -19,20 +22,25 @@ const Home: NextPage = () => {
       >
         <div
           className='canvasContainer'
-          style={{ display: 'flex', flexDirection: 'row' }}
+          style={{
+            display: 'flex',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
         >
           <canvas
             id='canvas'
             style={{
               width: '1000px',
               height: '700px',
-              marginRight: '50px',
               backgroundColor: '#FFF',
               borderRadius: '20px',
               boxShadow: '0 0px 20px #406e6f',
             }}
           ></canvas>
-          <div
+          {/* <div
             className='toolbar'
             style={{
               width: '150px',
@@ -41,7 +49,7 @@ const Home: NextPage = () => {
               borderRadius: '20px',
               boxShadow: '0 0px 20px #406e6f',
             }}
-          ></div>
+          ></div> */}
         </div>
       </div>
     </React.Fragment>
