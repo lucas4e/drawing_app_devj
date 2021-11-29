@@ -16,7 +16,7 @@ const Home: NextPage = () => {
   const defaultProps = {
     onChange: null,
     loadTimeOffset: 5,
-    lazyRadius: 0,
+    lazyRadius: 1,
     brushRadius: 10,
     brushColor: '#697689',
     catenaryColor: '#0a0302',
