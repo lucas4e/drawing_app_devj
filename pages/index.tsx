@@ -10,7 +10,7 @@ import {
   MdSave,
   MdCloudDownload,
   MdBrush,
-} from 'react-icons/Md'
+} from 'react-icons/md'
 
 const Home: NextPage = () => {
   const defaultProps = {
