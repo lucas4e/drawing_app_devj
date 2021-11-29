@@ -1,7 +1,7 @@
 import * as React from 'react'
 import type { NextPage } from 'next'
 import CanvasDraw from 'react-canvas-draw'
-import { BlockPicker, ColorResult } from 'react-color'
+import { BlockPicker } from 'react-color'
 import {
   MdOutlineGridOff,
   MdOutlineGridOn,
@@ -27,8 +27,6 @@ const Home: NextPage = () => {
     gridLineWidth: 0.5,
     hideGridX: false,
     hideGridY: false,
-    canvasWidth: 1300,
-    canvasHeight: 700,
     disabled: false,
     imgSrc: '',
     // saveData: null,
@@ -38,11 +36,13 @@ const Home: NextPage = () => {
     mouseZoomFactor: 0.01,
     zoomExtents: { min: 0.33, max: 3 },
   }
+
+  //Declared here to prevent ts(2448)
+  const [canvasProps, setCanvasProps] = React.useState(defaultProps)
   const [brushRadiusPickerVisible, setBrushRadiusPickerVisible] =
     React.useState(false)
   const [pickerVisible, setPickerVisible] = React.useState(false)
   const [isDrawing, setIsDrawing] = React.useState(false)
-  const [canvasProps, setCanvasProps] = React.useState(defaultProps)
   const [infoMessage, setInfoMessage] = React.useState({ type: '', name: '' })
   const canvasRef = React.useRef<any>(null)
   const popupRef = React.useRef<any>(null)
@@ -100,6 +100,10 @@ const Home: NextPage = () => {
     }
   }
 
+  function restrictBrushRadiusResize(event: any) {
+    setIsDrawing(event.buttons === 1)
+  }
+
   const setBrushRadiusConstraints = React.useCallback(() => {
     if (canvasProps.brushRadius <= brushRadiusConstraints.min) {
       setCanvasProps({
@@ -143,10 +147,6 @@ const Home: NextPage = () => {
     } else return
   }, [pickerVisible, brushRadiusPickerVisible])
 
-  function restrictBrushRadiusResize(event: any) {
-    setIsDrawing(event.buttons === 1)
-  }
-
   React.useEffect(() => {
     const canvasEl = document.getElementById('canvasEl')
 
@@ -169,6 +169,8 @@ const Home: NextPage = () => {
         className='appContainer'
         id='appContainer'
         style={{
+          width: '100%',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -183,16 +185,17 @@ const Home: NextPage = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            marginBottom: '1rem',
+            marginBottom: '1.5rem',
             backgroundColor: '#558E90',
             width: '600px',
           }}
         >
           <button
             style={{ display: 'contents', cursor: 'pointer' }}
-            onClick={() =>
+            onClick={() => {
               setBrushRadiusPickerVisible(!brushRadiusPickerVisible)
-            }
+              setPickerVisible(false)
+            }}
           >
             <MdBrush style={{ width: '30px', height: '30px' }} />
           </button>
@@ -250,7 +253,10 @@ const Home: NextPage = () => {
               border: '2.5px solid #000000',
               cursor: 'pointer',
             }}
-            onClick={() => setPickerVisible(!pickerVisible)}
+            onClick={() => {
+              setPickerVisible(!pickerVisible)
+              setBrushRadiusPickerVisible(false)
+            }}
           ></button>
           {pickerVisible && (
             <div
@@ -330,7 +336,11 @@ const Home: NextPage = () => {
         >
           <CanvasDraw
             ref={canvasRef}
-            style={{ cursor: 'none' }}
+            style={{
+              cursor: 'none',
+              width: '80vw',
+              height: '75vh',
+            }}
             {...canvasProps}
           />
         </div>
@@ -338,7 +348,9 @@ const Home: NextPage = () => {
           ref={popupRef}
           style={{
             position: 'absolute',
-            marginTop: '850px',
+            bottom: 0,
+            overflow: 'hidden',
+            marginBottom: '-50px',
             left: '50%',
             transform: 'translate(-50%, -50%)',
             color: '#FFF',
