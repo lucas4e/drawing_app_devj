@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@types/react-icons": "^3.0.0",
-    "gh-pages": "^3.2.3",
     "next": "12.0.4",
     "react": "17.0.2",
     "react-canvas-draw": "^1.2.1",
