@@ -1,55 +1,275 @@
 import * as React from 'react'
 import type { NextPage } from 'next'
-import { useCanvas } from '../hooks/useCanvas'
+import CanvasDraw from 'react-canvas-draw'
+import { BlockPicker, ColorResult } from 'react-color'
+import {
+  MdOutlineGridOff,
+  MdOutlineGridOn,
+  MdDelete,
+  MdUndo,
+  MdSave,
+  MdBrush,
+} from 'react-icons/Md'
 
 const Home: NextPage = () => {
-  const [canvas, setCanvas] = React.useState<HTMLElement | null>(null)
-  const {} = useCanvas(canvas as HTMLElement)
+  const defaultProps = {
+    onChange: null,
+    loadTimeOffset: 5,
+    lazyRadius: 0,
+    brushRadius: 10,
+    brushColor: '#697689',
+    catenaryColor: '#0a0302',
+    hideGrid: true,
+    gridColor: 'rgba(150,150,150,0.17)',
+    gridSizeX: 25,
+    gridSizeY: 25,
+    gridLineWidth: 0.5,
+    hideGridX: false,
+    hideGridY: false,
+    canvasWidth: 1300,
+    canvasHeight: 700,
+    disabled: false,
+    imgSrc: '',
+    // saveData: null,
+    immediateLoading: false,
+    hideInterface: false,
+    enablePanAndZoom: false,
+    mouseZoomFactor: 0.01,
+    zoomExtents: { min: 0.33, max: 3 },
+  }
+  const [brushRadiusPickerVisible, setBrushRadiusPickerVisible] =
+    React.useState(false)
+  const [pickerVisible, setPickerVisible] = React.useState(false)
+  const [canvasProps, setCanvasProps] = React.useState(defaultProps)
+  const canvasRef = React.useRef<any>(null)
+  const brushRadiusConstraints = {
+    max: 200,
+    min: 2,
+  }
+
+  function handlePickerChange(color: any) {
+    setCanvasProps({ ...canvasProps, brushColor: color })
+    setPickerVisible(!pickerVisible)
+  }
+
+  function handleUndo(event: any) {
+    if (event.ctrlKey && event.keyCode === 90) {
+      canvasRef.current!.undo()
+    }
+  }
+
+  const setBrushRadiusConstraints = React.useCallback(() => {
+    if (canvasProps.brushRadius <= brushRadiusConstraints.min) {
+      setCanvasProps({
+        ...canvasProps,
+        brushRadius: brushRadiusConstraints.min,
+      })
+    }
+
+    if (canvasProps.brushRadius >= brushRadiusConstraints.max) {
+      setCanvasProps({
+        ...canvasProps,
+        brushRadius: brushRadiusConstraints.max,
+      })
+    }
+  }, [canvasProps, brushRadiusConstraints.min, brushRadiusConstraints.max])
+
+  const handleRadiusChange = React.useCallback(
+    event => {
+      let resize
+      let tick = 2
+      event.deltaY > 0
+        ? (resize = canvasProps.brushRadius -= tick)
+        : (resize = canvasProps.brushRadius += tick)
+
+      setCanvasProps({
+        ...canvasProps,
+        brushRadius: resize,
+      })
+      setBrushRadiusConstraints()
+    },
+    [canvasProps, setBrushRadiusConstraints]
+  )
+
+  const closeOptionsMenu = React.useCallback(() => {
+    if (pickerVisible) {
+      setPickerVisible(false)
+    } else if (brushRadiusPickerVisible) {
+      setBrushRadiusPickerVisible(false)
+    } else return
+  }, [pickerVisible, brushRadiusPickerVisible])
 
   React.useEffect(() => {
-    setCanvas(document?.getElementById('canvas'))
-  }, [])
+    const canvasEl = document.getElementById('canvasEl')
+
+    document?.addEventListener('keydown', handleUndo)
+    canvasEl?.addEventListener('wheel', handleRadiusChange)
+    canvasEl?.addEventListener('click', closeOptionsMenu)
+
+    return () => {
+      document?.removeEventListener('keydown', handleUndo)
+      canvasEl?.removeEventListener('wheel', handleRadiusChange)
+      canvasEl?.removeEventListener('click', closeOptionsMenu)
+    }
+  }, [canvasRef, closeOptionsMenu, handleRadiusChange])
 
   return (
     <React.Fragment>
       <div
         className='appContainer'
+        id='appContainer'
         style={{
           display: 'flex',
-          justifyContent: 'center',
-          marginTop: '100px',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginTop: '60px',
         }}
       >
         <div
-          className='canvasContainer'
+          className='settingsContainer'
           style={{
+            padding: '5px',
+            borderRadius: '10px',
             display: 'flex',
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: '1rem',
+            backgroundColor: '#558E90',
+            width: '600px',
           }}
         >
-          <canvas
-            id='canvas'
+          <button
+            style={{ display: 'contents', cursor: 'pointer' }}
+            onClick={() =>
+              setBrushRadiusPickerVisible(!brushRadiusPickerVisible)
+            }
+          >
+            <MdBrush style={{ width: '30px', height: '30px' }} />
+          </button>
+          {brushRadiusPickerVisible && (
+            <div
+              style={{
+                position: 'absolute',
+                display: 'flex',
+                justifyContent: 'center',
+                marginTop: '108px',
+                marginRight: '258px',
+                width: '200px',
+                height: '50px',
+                backgroundColor: '#FFF',
+                borderRadius: '5px',
+                boxShadow: '0px 1px 1px #E5E5E5',
+                zIndex: '10000',
+              }}
+            >
+              <div style={{ marginTop: '1rem' }}>
+                <input
+                  type='range'
+                  defaultValue={canvasProps.brushRadius}
+                  min={brushRadiusConstraints.min}
+                  max={brushRadiusConstraints.max}
+                  id='brushRadiusSlider'
+                  onChange={e =>
+                    setCanvasProps({
+                      ...canvasProps,
+                      brushRadius: parseInt(e.target.value),
+                    })
+                  }
+                ></input>
+              </div>
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '25px',
+                  height: '25px',
+                  backgroundColor: '#FFF',
+                  marginTop: '-5px',
+                  transform: 'rotate(45deg)',
+                  zIndex: '-100',
+                }}
+              ></div>
+            </div>
+          )}
+          <button
             style={{
-              width: '1000px',
-              height: '700px',
-              backgroundColor: '#FFF',
-              borderRadius: '20px',
-              boxShadow: '0 0px 20px #406e6f',
+              width: '30px',
+              height: '30px',
+              marginLeft: '2rem',
+              borderRadius: '50%',
+              backgroundColor: canvasProps.brushColor,
+              border: 'none',
+              cursor: 'pointer',
             }}
-          ></canvas>
-          {/* <div
-            className='toolbar'
-            style={{
-              width: '150px',
-              height: '700px',
-              backgroundColor: '#FFF',
-              borderRadius: '20px',
-              boxShadow: '0 0px 20px #406e6f',
-            }}
-          ></div> */}
+            onClick={() => setPickerVisible(!pickerVisible)}
+          ></button>
+          {pickerVisible && (
+            <div
+              className='pickerContainer'
+              style={{
+                position: 'absolute',
+                marginTop: '275px',
+                marginRight: '188px',
+                zIndex: '1000',
+              }}
+            >
+              <BlockPicker
+                color={canvasProps.brushColor}
+                onChangeComplete={color => handlePickerChange(color.hex)}
+              />
+            </div>
+          )}
+          <div style={{ marginLeft: '2rem' }}>
+            <button
+              style={{ display: 'contents', cursor: 'pointer' }}
+              onClick={() =>
+                setCanvasProps({
+                  ...canvasProps,
+                  hideGrid: !canvasProps.hideGrid,
+                })
+              }
+            >
+              {canvasProps.hideGrid ? (
+                <MdOutlineGridOn size='2rem' />
+              ) : (
+                <MdOutlineGridOff size='2rem' />
+              )}
+            </button>
+            <button
+              style={{
+                display: 'contents',
+                cursor: 'pointer',
+              }}
+            >
+              <MdUndo
+                style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
+                onClick={() => canvasRef.current!.undo()}
+              />
+            </button>
+            <button
+              style={{
+                display: 'contents',
+                cursor: 'pointer',
+              }}
+            >
+              <MdDelete
+                style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
+                onClick={() => canvasRef.current!.eraseAll()}
+              />
+            </button>
+          </div>
+        </div>
+        <div
+          id='canvasEl'
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <CanvasDraw
+            ref={canvasRef}
+            style={{ cursor: 'none' }}
+            {...canvasProps}
+          />
         </div>
       </div>
     </React.Fragment>
