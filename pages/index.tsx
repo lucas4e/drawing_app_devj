@@ -8,6 +8,7 @@ import {
   MdDelete,
   MdUndo,
   MdSave,
+  MdCloudDownload,
   MdBrush,
 } from 'react-icons/Md'
 
@@ -40,12 +41,15 @@ const Home: NextPage = () => {
   const [brushRadiusPickerVisible, setBrushRadiusPickerVisible] =
     React.useState(false)
   const [pickerVisible, setPickerVisible] = React.useState(false)
+  const [isDrawing, setIsDrawing] = React.useState(false)
   const [canvasProps, setCanvasProps] = React.useState(defaultProps)
+  const [infoMessage, setInfoMessage] = React.useState({ type: '', name: '' })
   const canvasRef = React.useRef<any>(null)
   const brushRadiusConstraints = {
     max: 200,
     min: 2,
   }
+  const popupBox = document.getElementById('popupBox')
 
   function handlePickerChange(color: any) {
     setCanvasProps({ ...canvasProps, brushColor: color })
@@ -55,6 +59,44 @@ const Home: NextPage = () => {
   function handleUndo(event: any) {
     if (event.ctrlKey && event.keyCode === 90) {
       canvasRef.current!.undo()
+    }
+  }
+
+  function handleEraseAll() {
+    canvasRef.current!.eraseAll()
+  }
+
+  function handleSave() {
+    const canvasName = window.prompt(
+      'Please give your masterpiece a name!',
+      'my masterpiece'
+    )
+    if (!canvasName) return
+    const canvasObj = {
+      ctxString: canvasRef.current.getSaveData(),
+      ctxName: canvasName,
+    }
+    localStorage.setItem('savedCanvas', JSON.stringify(canvasObj))
+    localStoragePopup('saving', canvasObj.ctxName)
+  }
+
+  function handleLoad() {
+    const savedData = localStorage.getItem('savedCanvas')
+    const savedDataJSON = JSON.parse(savedData as string)
+
+    if (savedData) {
+      canvasRef.current.loadSaveData(savedDataJSON.ctxString)
+      localStoragePopup('loading', savedDataJSON.ctxName)
+    }
+  }
+
+  function localStoragePopup(type: string, name: string) {
+    setInfoMessage({ type: type, name: name })
+    if (!popupBox?.classList.contains('showPopup')) {
+      popupBox?.classList.add('showPopup')
+      setTimeout(() => {
+        popupBox?.classList.remove('showPopup')
+      }, 2000)
     }
   }
 
@@ -82,13 +124,15 @@ const Home: NextPage = () => {
         ? (resize = canvasProps.brushRadius -= tick)
         : (resize = canvasProps.brushRadius += tick)
 
-      setCanvasProps({
-        ...canvasProps,
-        brushRadius: resize,
-      })
+      if (!isDrawing) {
+        setCanvasProps({
+          ...canvasProps,
+          brushRadius: resize,
+        })
+      }
       setBrushRadiusConstraints()
     },
-    [canvasProps, setBrushRadiusConstraints]
+    [canvasProps, setBrushRadiusConstraints, isDrawing]
   )
 
   const closeOptionsMenu = React.useCallback(() => {
@@ -99,17 +143,23 @@ const Home: NextPage = () => {
     } else return
   }, [pickerVisible, brushRadiusPickerVisible])
 
+  function restrictBrushRadiusResize(event: any) {
+    setIsDrawing(event.buttons === 1)
+  }
+
   React.useEffect(() => {
     const canvasEl = document.getElementById('canvasEl')
 
     document?.addEventListener('keydown', handleUndo)
     canvasEl?.addEventListener('wheel', handleRadiusChange)
     canvasEl?.addEventListener('click', closeOptionsMenu)
+    canvasEl?.addEventListener('mousemove', restrictBrushRadiusResize)
 
     return () => {
       document?.removeEventListener('keydown', handleUndo)
       canvasEl?.removeEventListener('wheel', handleRadiusChange)
       canvasEl?.removeEventListener('click', closeOptionsMenu)
+      canvasEl?.removeEventListener('mousemove', restrictBrushRadiusResize)
     }
   }, [canvasRef, closeOptionsMenu, handleRadiusChange])
 
@@ -153,7 +203,7 @@ const Home: NextPage = () => {
                 display: 'flex',
                 justifyContent: 'center',
                 marginTop: '108px',
-                marginRight: '258px',
+                marginRight: '380px',
                 width: '200px',
                 height: '50px',
                 backgroundColor: '#FFF',
@@ -165,7 +215,7 @@ const Home: NextPage = () => {
               <div style={{ marginTop: '1rem' }}>
                 <input
                   type='range'
-                  defaultValue={canvasProps.brushRadius}
+                  value={canvasProps.brushRadius}
                   min={brushRadiusConstraints.min}
                   max={brushRadiusConstraints.max}
                   id='brushRadiusSlider'
@@ -197,7 +247,7 @@ const Home: NextPage = () => {
               marginLeft: '2rem',
               borderRadius: '50%',
               backgroundColor: canvasProps.brushColor,
-              border: 'none',
+              border: '2.5px solid #000000',
               cursor: 'pointer',
             }}
             onClick={() => setPickerVisible(!pickerVisible)}
@@ -208,7 +258,7 @@ const Home: NextPage = () => {
               style={{
                 position: 'absolute',
                 marginTop: '275px',
-                marginRight: '188px',
+                marginRight: '250px',
                 zIndex: '1000',
               }}
             >
@@ -253,7 +303,20 @@ const Home: NextPage = () => {
             >
               <MdDelete
                 style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
-                onClick={() => canvasRef.current!.eraseAll()}
+                // onClick={() => canvasRef.current!.eraseAll()}
+                onClick={handleEraseAll}
+              />
+            </button>
+            <button style={{ display: 'contents', cursor: 'pointer' }}>
+              <MdSave
+                style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
+                onClick={handleSave}
+              />
+            </button>
+            <button style={{ display: 'contents', cursor: 'pointer' }}>
+              <MdCloudDownload
+                style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
+                onClick={handleLoad}
               />
             </button>
           </div>
@@ -271,6 +334,18 @@ const Home: NextPage = () => {
             {...canvasProps}
           />
         </div>
+        <div
+          id='popupBox'
+          style={{
+            position: 'absolute',
+            marginTop: '850px',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: '#FFF',
+            fontSize: '22px',
+            transition: '150ms',
+          }}
+        >{`${infoMessage.type} artwork "${infoMessage.name}"`}</div>
       </div>
     </React.Fragment>
   )
