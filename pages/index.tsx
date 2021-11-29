@@ -45,11 +45,11 @@ const Home: NextPage = () => {
   const [canvasProps, setCanvasProps] = React.useState(defaultProps)
   const [infoMessage, setInfoMessage] = React.useState({ type: '', name: '' })
   const canvasRef = React.useRef<any>(null)
+  const popupRef = React.useRef<any>(null)
   const brushRadiusConstraints = {
     max: 200,
     min: 2,
   }
-  const popupBox = document.getElementById('popupBox')
 
   function handlePickerChange(color: any) {
     setCanvasProps({ ...canvasProps, brushColor: color })
@@ -92,10 +92,10 @@ const Home: NextPage = () => {
 
   function localStoragePopup(type: string, name: string) {
     setInfoMessage({ type: type, name: name })
-    if (!popupBox?.classList.contains('showPopup')) {
-      popupBox?.classList.add('showPopup')
+    if (!popupRef.current?.classList.contains('showPopup')) {
+      popupRef.current?.classList.add('showPopup')
       setTimeout(() => {
-        popupBox?.classList.remove('showPopup')
+        popupRef.current?.classList.remove('showPopup')
       }, 2000)
     }
   }
@@ -335,7 +335,7 @@ const Home: NextPage = () => {
           />
         </div>
         <div
-          id='popupBox'
+          ref={popupRef}
           style={{
             position: 'absolute',
             marginTop: '850px',
