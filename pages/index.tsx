@@ -10,6 +10,7 @@ import {
   MdSave,
   MdCloudDownload,
   MdBrush,
+  MdDownload,
 } from 'react-icons/md'
 
 const Home: NextPage = () => {
@@ -29,7 +30,6 @@ const Home: NextPage = () => {
     hideGridY: false,
     disabled: false,
     imgSrc: '',
-    // saveData: null,
     immediateLoading: false,
     hideInterface: false,
     enablePanAndZoom: false,
@@ -50,6 +50,9 @@ const Home: NextPage = () => {
     max: 200,
     min: 2,
   }
+  const fileType = 'png'
+  const useBgImage = false
+  const backgroundColour = '#FFF'
 
   function handlePickerChange(color: any) {
     setCanvasProps({ ...canvasProps, brushColor: color })
@@ -88,6 +91,22 @@ const Home: NextPage = () => {
       canvasRef.current.loadSaveData(savedDataJSON.ctxString)
       localStoragePopup('loading', savedDataJSON.ctxName)
     }
+  }
+
+  function handleExport() {
+    const file = canvasRef.current.getDataURL(
+      fileType,
+      useBgImage,
+      backgroundColour
+    )
+    const savedData = localStorage.getItem('savedCanvas')
+    const savedDataJSON = JSON.parse(savedData as string)
+    const element = document.createElement('a')
+    element.setAttribute('href', file)
+    element.setAttribute('download', file)
+    element.download = savedDataJSON?.ctxName || 'artwork'
+    element.click()
+    element.remove()
   }
 
   function localStoragePopup(type: string, name: string) {
@@ -206,7 +225,7 @@ const Home: NextPage = () => {
                 display: 'flex',
                 justifyContent: 'center',
                 marginTop: '108px',
-                marginRight: '380px',
+                marginRight: '445px',
                 width: '200px',
                 height: '50px',
                 backgroundColor: '#FFF',
@@ -264,7 +283,7 @@ const Home: NextPage = () => {
               style={{
                 position: 'absolute',
                 marginTop: '275px',
-                marginRight: '250px',
+                marginRight: '312px',
                 zIndex: '1000',
               }}
             >
@@ -285,9 +304,9 @@ const Home: NextPage = () => {
               }
             >
               {canvasProps.hideGrid ? (
-                <MdOutlineGridOn size='2rem' />
+                <MdOutlineGridOn size='32px' />
               ) : (
-                <MdOutlineGridOff size='2rem' />
+                <MdOutlineGridOff size='32px' />
               )}
             </button>
             <button
@@ -323,6 +342,12 @@ const Home: NextPage = () => {
               <MdCloudDownload
                 style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
                 onClick={handleLoad}
+              />
+            </button>
+            <button style={{ display: 'contents', cursor: 'pointer' }}>
+              <MdDownload
+                style={{ width: '30px', height: '30px', marginLeft: '2rem' }}
+                onClick={handleExport}
               />
             </button>
           </div>
